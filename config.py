@@ -1,5 +1,5 @@
+import requests
 from os import getenv
-
 from dotenv import load_dotenv
 from pyrogram import filters
 
@@ -28,7 +28,7 @@ class Config(object):
     TELEGRAM_IMG = getenv("TELEGRAM_IMG", None)         # put direct link to image here
     TG_AUDIO_SIZE_LIMIT = int(getenv("TG_AUDIO_SIZE_LIMIT", 104857600))     # size in bytes. 0 for no limit
     TG_VIDEO_SIZE_LIMIT = int(getenv("TG_VIDEO_SIZE_LIMIT", 1073741824))    # size in bytes. 0 for no limit
-    TZ = getenv("TZ", "Asia/Kolkata")   # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+    TZ = getenv("TZ", "Asia/Tehran")   # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 
     # do not edit these variables
     BANNED_USERS = filters.user()
