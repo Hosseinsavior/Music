@@ -8,12 +8,12 @@ load_dotenv()
 class Config(object):
     # required config variables
     API_HASH = getenv("API_HASH", None)                # get from my.telegram.org
-    API_ID = int(getenv("API_ID", 0))                  # get from my.telegram.org
+    API_ID = int(getenv("API_ID", 14699743))                  # get from my.telegram.org
     BOT_TOKEN = getenv("BOT_TOKEN", None)              # get from @BotFather
     DATABASE_URL = getenv("DATABASE_URL", None)        # from https://cloud.mongodb.com/
     HELLBOT_SESSION = getenv("HELLBOT_SESSION", None)  # enter your session string here
     LOGGER_ID = int(getenv("LOGGER_ID", 0))            # make a channel and get its ID
-    OWNER_ID = getenv("OWNER_ID", "")                  # enter your id here
+    OWNER_ID = int(getenv("OWNER_ID", 5059280908))                  # enter your id here
 
     # optional config variables
     BLACK_IMG = getenv("BLACK_IMG", "https://telegra.ph/file/2c546060b20dfd7c1ff2d.jpg")        # black image for progress
