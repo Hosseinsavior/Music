@@ -1,5 +1,6 @@
 import asyncio
 import random
+from typing import Union
 
 from pyrogram import filters
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, Message
@@ -19,9 +20,7 @@ from Music.utils.youtube import ytube
 
 
 @hellbot.app.on_message(
-    filters.command(["play", "vplay", "fplay", "fvplay"])
-    & filters.group
-    & ~Config.BANNED_USERS
+    filters.command(["play", "vplay", "fplay", "fvplay"]) & filters.group & ~Config.BANNED_USERS
 )
 @check_mode
 @PlayWrapper
@@ -33,70 +32,52 @@ async def play_music(_, message: Message, context: dict):
     else:
         try:
             await db.update_user(user_id, "user_name", user_name)
-        except:
-            pass
+        except Exception as e:
+            print(f"Error updating user: {e}")
+
     hell = await message.reply_text("Processing ...")
-    # initialise variables
     video, force, url, tgaud, tgvid = context.values()
     play_limit = formatter.mins_to_secs(f"{Config.PLAY_LIMIT}:00")
 
-    # if the user replied to a message and that message is an audio file
+    async def download_and_play(file, file_type):
+        await hell.edit("Downloading ...")
+        file_path = await hellbot.app.download_media(message.reply_to_message)
+        context.update({
+            "chat_id": message.chat.id,
+            "user_id": message.from_user.id,
+            "file": file_path,
+            "title": f"Telegram {file_type}",
+            "user": message.from_user.mention,
+            "video_id": "telegram",
+            "vc_type": "voice" if file_type == "Audio" else "video",
+            "force": force,
+        })
+        await player.play(hell, context)
+
     if tgaud:
-        size_check = formatter.check_limit(tgaud.file_size, Config.TG_AUDIO_SIZE_LIMIT)
-        if not size_check:
+        if not formatter.check_limit(tgaud.file_size, Config.TG_AUDIO_SIZE_LIMIT):
             return await hell.edit(
                 f"Audio file size exceeds the size limit of {formatter.bytes_to_mb(Config.TG_AUDIO_SIZE_LIMIT)}MB."
             )
-        time_check = formatter.check_limit(tgaud.duration, play_limit)
-        if not time_check:
+        if not formatter.check_limit(tgaud.duration, play_limit):
             return await hell.edit(
                 f"Audio duration limit of {Config.PLAY_LIMIT} minutes exceeded."
             )
-        await hell.edit("Downloading ...")
-        file_path = await hellbot.app.download_media(message.reply_to_message)
-        context = {
-            "chat_id": message.chat.id,
-            "user_id": message.from_user.id,
-            "duration": formatter.secs_to_mins(tgaud.duration),
-            "file": file_path,
-            "title": "Telegram Audio",
-            "user": message.from_user.mention,
-            "video_id": "telegram",
-            "vc_type": "voice",
-            "force": force,
-        }
-        await player.play(hell, context)
+        await download_and_play(tgaud, "Audio")
         return
 
-    # if the user replied to a message and that message is a video file
     if tgvid:
-        size_check = formatter.check_limit(tgvid.file_size, Config.TG_VIDEO_SIZE_LIMIT)
-        if not size_check:
+        if not formatter.check_limit(tgvid.file_size, Config.TG_VIDEO_SIZE_LIMIT):
             return await hell.edit(
                 f"Video file size exceeds the size limit of {formatter.bytes_to_mb(Config.TG_VIDEO_SIZE_LIMIT)}MB."
             )
-        time_check = formatter.check_limit(tgvid.duration, play_limit)
-        if not time_check:
+        if not formatter.check_limit(tgvid.duration, play_limit):
             return await hell.edit(
                 f"Audio duration limit of {Config.PLAY_LIMIT} minutes exceeded."
             )
-        await hell.edit("Downloading ...")
-        file_path = await hellbot.app.download_media(message.reply_to_message)
-        context = {
-            "chat_id": message.chat.id,
-            "user_id": message.from_user.id,
-            "duration": formatter.secs_to_mins(tgvid.duration),
-            "file": file_path,
-            "title": "Telegram Video",
-            "user": message.from_user.mention,
-            "video_id": "telegram",
-            "vc_type": "video",
-            "force": force,
-        }
-        await player.play(hell, context)
+        await download_and_play(tgvid, "Video")
         return
 
-    # if the user replied to or sent a youtube link
     if url:
         if not ytube.check(url):
             return await hell.edit("Invalid YouTube URL.")
@@ -104,10 +85,10 @@ async def play_music(_, message: Message, context: dict):
             await hell.edit("Processing the playlist ...")
             song_list = await ytube.get_playlist(url)
             random.shuffle(song_list)
-            context = {
+            context.update({
                 "user_id": message.from_user.id,
                 "user_mention": message.from_user.mention,
-            }
+            })
             await player.playlist(hell, context, song_list, video)
             return
         try:
@@ -115,7 +96,7 @@ async def play_music(_, message: Message, context: dict):
             result = await ytube.get_data(url, False)
         except Exception as e:
             return await hell.edit(f"**Error:**\n`{e}`")
-        context = {
+        context.update({
             "chat_id": message.chat.id,
             "user_id": message.from_user.id,
             "duration": result[0]["duration"],
@@ -125,18 +106,17 @@ async def play_music(_, message: Message, context: dict):
             "video_id": result[0]["id"],
             "vc_type": "video" if video else "voice",
             "force": force,
-        }
+        })
         await player.play(hell, context)
         return
 
-    # if the user sent a query
     query = message.text.split(" ", 1)[1]
     try:
         await hell.edit("Searching ...")
         result = await ytube.get_data(query, False)
     except Exception as e:
         return await hell.edit(f"**Error:**\n`{e}`")
-    context = {
+    context.update({
         "chat_id": message.chat.id,
         "user_id": message.from_user.id,
         "duration": result[0]["duration"],
@@ -146,13 +126,11 @@ async def play_music(_, message: Message, context: dict):
         "video_id": result[0]["id"],
         "vc_type": "video" if video else "voice",
         "force": force,
-    }
+    })
     await player.play(hell, context)
 
 
-@hellbot.app.on_message(
-    filters.command(["current", "playing"]) & filters.group & ~Config.BANNED_USERS
-)
+@hellbot.app.on_message(filters.command(["current", "playing"]) & filters.group & ~Config.BANNED_USERS)
 @UserWrapper
 async def playing(_, message: Message):
     chat_id = message.chat.id
@@ -162,7 +140,7 @@ async def playing(_, message: Message):
     que = Queue.get_current(chat_id)
     if not que:
         return await message.reply_text("Nothing is playing here.")
-    photo = thumb.generate((359), (297, 302), que["video_id"])
+    photo = thumb.generate(359, (297, 302), que["video_id"])
     btns = Buttons.player_markup(chat_id, que["video_id"], hellbot.app.username)
     to_send = TEXTS.PLAYING.format(
         hellbot.app.mention,
@@ -187,9 +165,7 @@ async def playing(_, message: Message):
     Config.PLAYER_CACHE[chat_id] = sent
 
 
-@hellbot.app.on_message(
-    filters.command(["queue", "que", "q"]) & filters.group & ~Config.BANNED_USERS
-)
+@hellbot.app.on_message(filters.command(["queue", "que", "q"]) & filters.group & ~Config.BANNED_USERS)
 @UserWrapper
 async def queued_tracks(_, message: Message):
     hell = await message.reply_text("Getting Queue...")
